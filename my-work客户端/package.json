@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "author": "HelloWorld-Ian <Aa15340521294@163.com>",
   "description": "An electron-vue project",
-  "license": null,
+  "license": "MIT",
   "main": "./dist/electron/main.js",
   "scripts": {
     "build": "node .electron-vue/build.js && electron-builder",
@@ -47,21 +47,36 @@
       "icon": "build/icons/icon.icns"
     },
     "win": {
-      "icon": "build/icons/icon.ico"
+      "icon": "static/main.ico"
     },
     "linux": {
-      "icon": "build/icons"
-    }
+      "icon": "static/main"
+    },
+    "nsis":{
+      "oneClick":false,
+      "allowElevation":true,
+      "allowToChangeInstallationDirectory":true,
+      "installerIcon":"static/main.ico",
+      "uninstallerIcon":"static/main.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+     }
   },
   "dependencies": {
     "axios": "^0.18.0",
-    "element-ui": "^2.15.2",
+    "element-ui": "^2.15.6",
     "nedb": "^1.8.0",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",
     "vue-router": "^3.0.1",
     "vuex": "^3.0.1",
-    "vuex-electron": "^1.0.0"
+    "vuex-electron": "^1.0.0",
+    "qs":"^6.10.1",
+    "mavon-editor":"^2.9.1",
+    "less": "^3.11.1",
+    "less-loader": "^5.0.0",
+    "wangeditor": "^3.1.1",
+    "ejsexcel": "^3.6.1"
   },
   "devDependencies": {
     "ajv": "^6.5.0",

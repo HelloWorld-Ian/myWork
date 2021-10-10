@@ -1,11 +1,12 @@
 <template>
 
     <div class="main">
+    <el-card style="height:100%">
     <el-card class="basic-card">
-    <img  src="../assets/userCenterHead1.svg" v-if="$store.state.userCenterHeadIndex==0" class="userHead"/>
-    <img  src="../assets/userCenterHead2.svg" v-else-if="$store.state.userCenterHeadIndex==1" class="userHead"/>
-    <img  src="../assets/userCenterHead3.svg" v-else-if="$store.state.userCenterHeadIndex==2" class="userHead" />
-    <img  src="../assets/userCenterHead4.svg" v-else-if="$store.state.userCenterHeadIndex==3" class="userHead" />
+    <img @click="changeUserHead"  src="../assets/userCenterHead1.svg" v-if="$store.state.userCenterHeadIndex==0" class="userHead"/>
+    <img @click="changeUserHead" src="../assets/userCenterHead2.svg" v-else-if="$store.state.userCenterHeadIndex==1" class="userHead"/>
+    <img @click="changeUserHead" src="../assets/userCenterHead3.svg" v-else-if="$store.state.userCenterHeadIndex==2" class="userHead" />
+    <img @click="changeUserHead" src="../assets/userCenterHead4.svg" v-else-if="$store.state.userCenterHeadIndex==3" class="userHead" />
     
     <div class="userIdInfo">
     
@@ -19,32 +20,37 @@
     
     
     <span style="float:left" class="userID_">{{$store.state.user=='HelloWorld'?'本地用户':'云端用户'}}</span>
-    <el-button @click="changeUserHead" size="mini" class="userIdInfo_btn" type="warning">切换头像</el-button>
-    <el-button @click="changeDb" size="mini" class="userIdInfo_btn" type="success"  v-if="$store.state.login">切换仓库</el-button>
     </div>
-
-    <el-popover
-    placement="left-end"
-    title="云同步"
-    width="200"
-    trigger="hover"
-    v-if="$store.state.login">
-    <el-button @click="SyncToCloud" size="mini" class="userIdInfo_btn" type="warning">同步云端</el-button>
-    <el-button @click="DownToLocal" size="mini" class="userIdInfo_btn" type="success">传送本地</el-button>
-    <img  src="../assets/synchronize.svg" class="sync" slot="reference"/>
-     
-    </el-popover>
     
     </el-card>
 
+    <el-card class="function-card" @click.native="toMessage">
+    <el-badge :is-dot="hasNewMsg()"  class="item">
+      <span style="float:left" class="function">我的消息</span>
+    </el-badge>
+    </el-card>
+
+    
+    <el-card class="function-card" @click.native="SyncToCloud">
+      <span style="float:left" class="function">同步云端</span>
+    </el-card>
+
+    <el-card class="function-card" @click.native="DownToLocal">
+      <span style="float:left" class="function">传送本地</span>
+    </el-card>
+
+    <el-card class="function-card" @click.native="changeDb">
+      <span style="float:left" class="function">切换数据源</span>
+    </el-card>
+
+   <!--  <el-card class="function-card" @click.native="clickSyncInformPart">
+      <span style="float:left" class="function">计划同步通知</span>
+    </el-card>  -->
 
     <el-card class="function-card" @click.native="clickModifyUserInfoPart">
       <span style="float:left" class="function">修改账户信息</span>
     </el-card>
 
-    <el-card class="function-card" @click.native="clickSyncInformPart">
-      <span style="float:left" class="function">计划同步通知</span>
-    </el-card>
 
     <el-card class="function-card" @click.native="clickDeleteCard" >
       <span style="float:left" class="function">删除用户计划</span>
@@ -109,7 +115,7 @@
   title="同步云端"
   :visible.sync="syncToCloudConfirm"
   width="30%">
-  <span>所选计划同步到云端之后将会覆盖云端原有同名计划，确认进行同步操作吗</span>
+  <span>所选计划同步到云端之后将会覆盖云端原有同名计划，同时会清空计划状态以及计划成员，确认进行同步操作吗</span>
   <span slot="footer" class="dialog-footer">
     <el-button @click="syncToCloudConfirm = false">取 消</el-button>
     <el-button type="primary" @click="doCloudSync" :loading="syncToCloudConfirm_loading">同 步</el-button>
@@ -164,7 +170,11 @@
   <span>邮箱通知</span>
   </div>
 
-  <div class="typeChoose">
+  <div class="typeChoose" @click="$message({
+                                    message:'暂未开放',
+                                    type:'warning'
+                                  })">
+
   <img class="typeImg" src="../assets/sync_message.svg" />
   <span>短信通知</span>
   </div>
@@ -248,20 +258,36 @@
  
   <el-dialog
   :visible.sync="modifyUserInfo"
-  width="30%">
+  width="600px"
+  :show-close="false"
+  :close-on-click-modal="false"
+  :close-on-press-escape="false"
+  title="用户信息" >
 
-  <el-descriptions title="用户信息" :column="1" >
+  <el-descriptions :column="1" >
   <el-descriptions-item label="邮箱">
   <span v-if="!change">{{$store.state.user}}</span>
-  <el-input v-if="change" placeholder="请输入新邮箱" v-model="user"></el-input>
+  <el-input v-if="change" placeholder="请输入新邮箱" v-model="user" size="mini"></el-input>
   </el-descriptions-item>
+  <br>
+   <el-descriptions-item label="手机">
+  <span v-if="!change">{{$store.state.phone}}</span>
+  <el-input v-if="change" placeholder="请输入新手机号" v-model="phone" size="mini"></el-input>
+  </el-descriptions-item>
+  <br>
+   <el-descriptions-item label="姓名">
+  <span v-if="!change">{{$store.state.user_name}}</span>
+  <el-input v-if="change" placeholder="请输入新姓名" v-model="user_name" size="mini"></el-input>
+  </el-descriptions-item>
+  <br>
   <el-descriptions-item label="密码">
   <span v-if="!change">{{$store.state.password}}</span>
-  <el-input v-if="change" placeholder="请输入新密码" v-model="password"></el-input>
+  <el-input v-if="change" placeholder="请输入新密码" v-model="password" size="mini"></el-input>
   </el-descriptions-item>
   </el-descriptions>
   
   <el-button type="success" v-if="!change" @click="change=!change" >修改</el-button>
+  <el-button type="warning"  @click="modifyUserInfo=false;change=false" >取消</el-button>
   <el-button type="success" v-if="change"  @click="submitChange()"  :loading="modifying">确认修改</el-button>
 
   </el-dialog>
@@ -305,6 +331,7 @@
           size="mini"
           type="danger"
           @click="doDeleteUserPlan(scope.$index,scope.row)">删除</el-button>
+
     </template>
     </el-table-column>
   </el-table>
@@ -312,7 +339,8 @@
 
 
   </el-dialog>
-
+  
+    </el-card>
 
   </div>
 
@@ -329,12 +357,12 @@ export default {
 
     //获取本地仓库中的数据
       db=new database({
-        filename:'./test.db',
+        filename:'./data/main/local.db',
         autoload:true
         })
 
       cloudDb=new database({
-        filename:'./cloud.db',
+        filename:'./data/main/cloud.db',
         autoload:true
         })
 
@@ -422,7 +450,9 @@ export default {
           modifyUserInfo:false,
           change:false,
           user:this.$store.state.user,
+          phone:this.$store.state.phone,
           password:this.$store.state.password,
+          user_name:this.$store.state.user_name,
           modifying:false,
 
           //删除用户计划
@@ -432,14 +462,23 @@ export default {
   },
   methods:{
     changeDb(){
-      if(this.$store.state.dbName=='./cloud.db'){
-        this.$store.state.dbName='./test.db'
+
+      if(!this.$store.state.login){
+          this.$message({
+            message:'请先进行登录',
+            type:'warning'
+          })
+          return 
+      }
+
+      if(this.$store.state.dbName=='./data/main/cloud.db'){
+        this.$store.state.dbName='./data/main/local.db'
         this.$message({
           message:'切换至本地计划仓库',
           type:'success'
         })
       }else{
-        this.$store.state.dbName='./cloud.db'
+        this.$store.state.dbName='./data/main/cloud.db'
         this.$message({
           message:'切换至云端计划仓库',
           type:'success'
@@ -465,9 +504,9 @@ export default {
         for(let i=0;i<this.plan.length;i++){
           if(this.plan[i].selected){
             delete this.planFullData[i]._id
-            uploadPlan.push(this.planFullData[i])
+            uploadPlan.push(JSON.parse(JSON.stringify(this.planFullData[i])))
             if(that.planLogFullData.has(this.plan[i].name)){
-              uploadPlanLog.push(that.planLogFullData.get(this.plan[i].name))
+              uploadPlanLog.push(JSON.parse(JSON.stringify(that.planLogFullData.get(this.plan[i].name))))
             }else{
               uploadPlanLog.push({
                  type:'planItemNotes',
@@ -477,6 +516,25 @@ export default {
             }
           }
         }
+
+        uploadPlan.forEach(function(item,index){
+          item.plan.member=[]
+          item.plan.manager={
+            name:that.$store.state.user_name,
+            email:that.$store.state.user,
+            phone:that.$store.state.phone,
+            host:true,
+            id:0,
+            user_id:that.$store.state.user_id
+          }
+          item.plan.member.push(item.plan.manager)
+          item.process.forEach(function(pro,i){
+            if(i!=0&&i!=item.process.length-1){
+              pro.proMem=[]
+              pro.status=0
+            }
+          })
+        })
 
         let params={
           plan:JSON.stringify(uploadPlan),
@@ -553,10 +611,24 @@ export default {
       },
 
       SyncToCloud(){
+        if(!this.$store.state.login){
+          this.$message({
+            message:'请先进行登录',
+            type:'warning'
+          })
+          return 
+        }
         this.syncToCloud=true
       },
 
       DownToLocal(){
+         if(!this.$store.state.login){
+          this.$message({
+            message:'请先进行登录',
+            type:'warning'
+          })
+          return 
+        }
         this.downToLocal=true
       },
 
@@ -660,6 +732,7 @@ export default {
         let that=this
         this.$http.post(this.$store.state.contextUrl+"/emailSync",that.$qs.stringify({
           user_id:that.$store.state.user_id,
+          user_name:that.$store.state.user_name,
           schedule:JSON.stringify(that.schedule)
         })).then(function(res){
           if(res.data=='success'){
@@ -681,14 +754,24 @@ export default {
           }
            
 
-
+       
+        cloudDb.update({type:"planItemTest2","plan.name":that.thisCloudPlan.plan.name},
+          that.thisCloudPlan,
+          function(err, numReplaced){
+                if(numReplaced==1){
+                that.$message({
+                    message:'保存成功',
+                    type:'success'
+                 })
+                }
+             })
 
        that.$http.post(that.$store.state.contextUrl+'/uploadPlan',that.$qs.stringify({
           user_id:that.$store.state.user_id,
           plan:JSON.stringify([that.thisCloudPlan]),
           planLog:JSON.stringify(uploadPlanLog)
         })).then(function(res){
-
+          that.reload()
           if(res.data=='fail'){
             that.$message({
               message:'云端同步失败，请检查网络设置',
@@ -725,13 +808,16 @@ export default {
         this.$http.post(that.$store.state.contextUrl+'/changeUserInfo',that.$qs.stringify({
           id:that.$store.state.user_id,
           email:that.user,
-          password:that.password
+          phone:that.phone,
+          password:that.password,
+          user_name:that.user_name
         })).then(function(res){
           if(res.data=='success'){
             that.$message({
               message:'修改成功',
               type:'success'
             })
+            that.reload()
           }else{
              that.$message({
               message:'修改失败',
@@ -742,6 +828,8 @@ export default {
           that.change=!that.change
 
           that.$store.state.user=that.user
+          that.$store.state.phone=that.phone
+          that.$store.state.user_name=that.user_name
           that.$store.state.password=that.password
         })
       },
@@ -781,21 +869,40 @@ export default {
       },
       clickDeleteCard(){
         this.deleteUserPlan=true
-      }
+      },
+      hasNewMsg(){
+        let hasNew=false
+        this.$store.state.message.forEach(function(item,index){
+          if(hasNew){
+            return
+          }
+          if(item.read==0){
+            hasNew=true
+          }
+        })
+        return hasNew
+      },
 
+      //查看消息详情
+      toMessage(){
+        this.$router.push('/message')
+      }
   }
 }
 </script>
+<style>
 
+</style>
 <style scoped>
 
 .main{
     height:90%;
+    overflow-y:hidden;
     font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",Arial,sans-serif;
 }
 
 .basic-card{
-    height:24%;
+    height:100px;
     width: 99%;
     margin: auto;
     margin-top:0.4%
@@ -804,10 +911,9 @@ export default {
   padding: 0.6%;
 }
 .userHead{
-    height:7%;
-    width:7%;
-    margin-top:0.5%;
-    margin-left:1%;
+    height:70px;
+    margin-top:5px;
+    margin-left:5px;
     float:left
 }
 .userHead:hover{
@@ -852,10 +958,9 @@ export default {
 }
 
 .function-card{
-    height:13%;
+    height:70px;
     width: 99%;
     margin: auto;
-    margin-top:0.4%
 }
 
 .function-card:hover{

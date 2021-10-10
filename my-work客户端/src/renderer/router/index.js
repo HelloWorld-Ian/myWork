@@ -12,14 +12,14 @@ export default new Router({
       component: require('@/components/mainFrame').default,
       children:[
         {
-          path:'/',
+          path:'/createPlan',
           name:'create-plan',
-          component:require('@/components/createPlan').default
+          component:require('@/components/createPlan_').default
         },
         {
           path:'/workbench',
           name:'workbench',
-          component:require('@/components/workbench').default
+          component:require('@/components/workbench_').default
         },
         {
           path:'/showPlan',
@@ -29,7 +29,7 @@ export default new Router({
         {
           path:'/planLog',
           name:'planLog',
-          component:require('@/components/planLog').default
+          component:require('@/components/planLog_').default
         },
         {
           path:'/userCenter',
@@ -55,6 +55,26 @@ export default new Router({
           path:'/markdown',
           name:'markdown',
           component:require('@/components/markdown').default
+        },
+        {
+          path:'/workbenchPlan',
+          name:'workbenchPlan',
+          component:require('@/components/workbench_plan').default
+        },
+        {
+          path:'/message',
+          name:'message',
+          component:require('@/components/message').default
+        },
+        {
+          path:'/cowork',
+          name:'cowork',
+          component:require('@/components/cowork').default
+        },
+        {
+          path:'/coworkDisplay',
+          name:'coworkDisplay',
+          component:require('@/components/coworkDisplay').default
         }
       ]
     },
@@ -62,6 +82,26 @@ export default new Router({
       path:'/pdf',
       name:'pdf',
       component:require('@/components/pdf').default
+    },
+    {
+      path:'/todayWorkComponent',
+      name:'todayWorkComponent',
+      component:require('@/components/todayWorkList').default
+    },
+    {
+      path:'/calendarComponent',
+      name:'calendarComponent',
+      component:require('@/components/calendar').default
+    },
+    {
+      path:'/clockComponent',
+      name:'clockComponent',
+      component:require('@/components/FlipClock').default
+    },
+    {
+      path:'/noteBookComponent',
+      name:'noteBookComponent',
+      component:require('@/components/index_book').default
     }
   ]
 })

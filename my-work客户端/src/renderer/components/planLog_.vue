@@ -1,9 +1,10 @@
 <template>
-<div>
-<el-card>
+<div style="overflow-y:hidden">
+<el-card style="height:100%;overflow-y:auto">
 <el-page-header @back="goBack" content="计划日志">
 </el-page-header>
-</el-card>
+<el-divider></el-divider>
+
 <el-calendar v-model="value" v-if="typeOf(notes.dailyNotes)!='undefined'">
   <template
     slot="dateCell"
@@ -19,24 +20,51 @@
     title="日志提示"
     width="150"
     trigger="hover"
-    content="存在日志记录">
-    <img slot='reference' style="width:20px;height:20px;float:left;margin-left:5%" src="../assets/note.svg" />
+    >
+    <span>{{noteText_brief}}</span>
+    <img slot='reference'  @mouseover="Update_noteText(data.day)" style="width:20px;height:20px;float:left;margin-left:5%" src="../assets/note.svg" />
     </el-popover>
- 
+   <!-- 已修改 -->
 
    <!-- the mark of changePoint --> 
    <el-popover
     v-if="isChangePoint(data.day)"
-    placement="top-start"
-    title="计划状态"
-    width="150"
-    trigger="hover"
-    :content="showChangePointContent(data.day)">
-    <img slot='reference' style="width:20px;height:20px;float:left;margin-left:5%" src="../assets/changePoint.svg" />
+    placement="left"
+    width="240"
+    trigger="hover">
+    <!-- :content="showChangePointContent(data.day)"> -->
+     <el-table :data="gridData" stripe>
+    <el-table-column width="80" property="status" label="状态"></el-table-column>
+    <el-table-column width="60" property="time" label="时间"></el-table-column>
+    <el-table-column width="100" property="task" label="任务"></el-table-column>
+  </el-table>
+    <img slot='reference' @mouseover=" getGridData(data.day)" style="width:20px;height:20px;float:left;margin-left:5%" src="../assets/changePoint.svg" />
   </el-popover>
+  <el-popover
+    v-if="isStart(data.day)"
+    placement="top-start"
+    title="项目状态"
+    width="70"
+    trigger="hover"
+    content="项目开始"
+    >
+    <i slot="reference" class="el-icon-s-flag" style="color:blue"></i>
+    </el-popover>
+  
+   <el-popover
+    v-if="isEnd(data.day)"
+    placement="top-start"
+    title="项目状态"
+    width="70"
+    trigger="hover"
+    content="项目结束"
+    >
+     <i  slot="reference" class="el-icon-s-flag" style="color:red"></i>
+    </el-popover>
   
   </template>
 </el-calendar>
+</el-card>
 
 <el-dialog title="日志信息" :visible.sync="NoteDialogVisible"  top="15%">
     <span>{{'日期：'+dateSelected}}</span>
@@ -52,7 +80,7 @@
     </el-input>
     <div slot="footer" class="dialog-footer">
     <el-button @click="NoteDialogVisible = false">返 回</el-button>
-    <el-button type="primary" @click="saveNote">保 存</el-button>
+    <el-button type="primary" @click="saveNote()">保 存</el-button>
   </div>
 </el-dialog>
 
@@ -80,10 +108,13 @@ export default {
 
             notes:[],
             noteText:'',
+            noteText_brief:'',
             dateSelected:'',
             NoteDialogVisible:false,
 
-            changePointMap:new Map()
+            changePointMap:new Map(),
+            ProjectMap:new Map(),
+            gridData: []
         }
     },
     created (){
@@ -124,33 +155,83 @@ export default {
 
                     //store all the processTimePoint
                     that=this
+                    // getDateStanderedFormat return 20xx-xx-xx format date
+                    /*
+                    第一个要获取项目的名称，获取项目开始的日期，项目结束的日期
+                    这里可以另外设立一个map数据结构
+                    第二个就是要存储如图的数据结构
+                     gridData: [{
+                      status:'END',
+                      time:'8:00',
+                      task:'作业1'
+                    },{
+                      status:'END',
+                      time:'8:00',
+                      task:'作业1'
+                    }]
+                    可以先用map 用日期作为键，上图对象数组为value
+                    再从后面提取
+                    */
                     this.process.forEach(function(item,index){
                         if(index==0){
-                            that.Set(that.changePointMap,that.getDateStanderedFormat(item.startDate),item.pro_name)
+                            that.SetProject(that.ProjectMap,that.getDateStanderedFormat(item.startDate),1)
                             return
                         }else if(index==that.process.length-1){
-                            that.Set(that.changePointMap,that.getDateStanderedFormat(item.startDate),item.pro_name)
+                            that.SetProject(that.ProjectMap,that.getDateStanderedFormat(item.startDate),2)
                             return
                         }
-                        that.Set(that.changePointMap,that.getDateStanderedFormat(item.startDate),'流程'+item.id+'开始')
-                        that.Set(that.changePointMap,that.getDateStanderedFormat(item.endDate),'流程'+item.id+'结束')
+                        that.Set(that.changePointMap,that.getDateStanderedFormat(item.startDate),item,1)
+                        that.Set(that.changePointMap,that.getDateStanderedFormat(item.endDate),item,2)
                     })
+                   
     },
     methods:{
         //set the array value of changePointMap
-        Set(map,format,process){
-            let tmp=[]
-            if(map.has(format)){
-                tmp=map.get(format)
-            }
-            tmp.push(process)
-            map.set(format,tmp)
+        Set(map,format,process,flag){
+           let tmp=[]
+           let grdata = {}
+          if(flag==1){
+            grdata['status'] = 'START'
+            grdata['time'] = process.startTime.substring(0,5)
+            grdata['task'] = process.pro_text.substring(0,10)
+          
+          }else{
+            grdata['status'] = 'END'
+            grdata['time'] = process.endTime.substring(0,5)
+            grdata['task'] = process.pro_text.substring(0,10)
+
+          }
+          if(map.has(format)){
+              tmp=map.get(format)
+          }
+          tmp.push(grdata)
+          map.set(format,tmp)
         }, 
+        SetProject(map,format,flag){
+             let grdata = {}
+             let tmp=[]
+             if(flag==1){
+                grdata['status'] = 'START'
+             }else{
+                 grdata['status'] = 'END'
+             }
+            if(map.has(format)){
+              tmp=map.get(format)
+          }
+          tmp.push(grdata)
+          map.set(format,tmp)  
+        },
         typeOf(obj){
             return typeof(obj)
         },
         goBack(){
-            this.$router.push('/workbench')
+            let that=this
+             this.$router.push({
+            name:'workbenchPlan',
+            params:{
+              name:that.plan.name
+            }
+          })
         },
         isOutside(DateArray){
             let year=parseInt(DateArray[0])
@@ -196,13 +277,13 @@ export default {
             await db.update({type:'planItemNotes',plan:that.plan.name},this.notes,function(err,numReplaced){
             })
              this.$message({
-                     message:'保存成功',
-                     type:'success'
-                     })
+               message:'保存成功',
+               type:'success'
+            })
 
-
+       
        //云同步代码
-       if(this.$store.state.dbName=='./cloud.db'){
+       if(this.$store.state.login){
            
           that.$store.state.syncing=true
           that.$http.post(that.$store.state.contextUrl+'/uploadPlan',that.$qs.stringify({
@@ -224,8 +305,7 @@ export default {
           }
           that.$store.state.syncing=false
         })
-
-      
+        this.reload()
     }
   
   },
@@ -242,6 +322,58 @@ export default {
             let month=parseInt(DateArray[1])
             let day=parseInt(DateArray[2])
             return year+'-'+(month<=9?('0'+month):month)+'-'+(day<=9?('0'+day):day)
+        },
+        Update_noteText(date){
+            let temText = this.notes.dailyNotes[date+""];
+            if(temText.length > 15){
+                    temText = temText.substr(0,14);
+                    this.noteText_brief = temText + "...";
+            }else{
+                this.noteText_brief = temText;
+            }
+        },
+        getGridData(date){
+            let temp = this.changePointMap.get(date+'')
+            let exchange = null
+            for(let i = 0;i < temp.length -1;i++){
+               for(let j = 0;j < temp.length - i-1;j++){
+                      if(temp[j].time > temp[j+1].time){
+                        exchange = temp[j]
+                        temp[j] = temp[j+1]
+                        temp[j+1] = exchange
+                      }
+               }
+            }
+            this.gridData = temp
+        },
+        isStart(date){
+          let tmp = null
+          let flag = false
+          tmp = this.ProjectMap.get(date+'')
+            if(tmp==undefined){
+            return false
+          }
+          tmp.forEach(function(item){
+            console.log('en')
+              if(item.status == "START"){
+                  flag = true
+              }
+          })
+          return flag
+        },
+        isEnd(date){
+          let tmp = null
+           let flag = false
+          tmp = this.ProjectMap.get(date+'')
+          if(tmp==undefined){
+            return false
+          }
+          tmp.forEach(function(item){
+              if(item.status == "END"){
+                flag = true
+              }
+          })
+          return flag
         }
     },
     watch: {
@@ -284,7 +416,8 @@ export default {
                  this.NoteDialogVisible=true
                 }
             }
-        }
+        },
+        inject:['reload']
     }
 </script>
 <style>

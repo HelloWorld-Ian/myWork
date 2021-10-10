@@ -1,17 +1,18 @@
 <template>
 <div class="main">
-    <el-card>
+   <el-card style="height:100%;overflow-y:auto">
     <el-page-header @back="goBack" content="编辑计划总结">
     </el-page-header>
-    </el-card>
-    <mavon-editor v-if="preview"  @save="save"  v-model="context" 
+    <el-divider></el-divider>
+    <mavon-editor  v-if="preview"  @save="save"  v-model="context" 
         :subfield="false"
         :defaultOpen="'preview'"
         :toolbarsFlag="false"
         :editable="false"
         :ishljs="true"/>
     
-      <mavon-editor v-if="!preview"  style="height:88%" @save="save" v-model="context" :toolbars="toolbars"/>
+      <mavon-editor v-if="!preview"   @save="save" v-model="context" :toolbars="toolbars"/>
+   </el-card>
 
     <el-dialog :visible.sync="saveDialog"  title="保存">
     <el-form label-width="auto">
@@ -77,8 +78,8 @@ export default {
                 })
             })
 
-               //云同步代码
-        if(this.$store.state.dbName=='./cloud.db'){
+        //云同步代码
+        if(this.$store.state.login){
           
           let plan=[]
 
@@ -172,6 +173,7 @@ export default {
 .main{
    font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB",
     "Microsoft YaHei","微软雅黑",Arial,sans-serif;
-   height:100%
+   height:100%;
+   overflow-y: hidden;
 }
 </style>

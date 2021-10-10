@@ -1,5 +1,6 @@
 <template>
-<div class="main">
+<div v-if="plan!=null" class="main">
+
 
 <el-card>
 <el-page-header @back="goBack" content="计划详情">
@@ -11,12 +12,8 @@
     <el-descriptions-item label="计划名称">{{plan.plan.name}}</el-descriptions-item>
     <el-descriptions-item label="计划性质">{{plan.plan.type}}</el-descriptions-item>
     
-    <el-descriptions-item label="计划发起人">
-    {{plan.plan.type=='个人计划'?plan.plan.excutor:plan.plan.manager}}
-    </el-descriptions-item>
-    
-    <el-descriptions-item label="小组成员" v-if="plan.plan.type=='小组计划'&&plan.plan.member.length>0">
-      <span style="float:left">{{plan.memberStr}}</span>
+    <el-descriptions-item :label="plan.plan.type=='个人计划'?'执行人':'负责人'">
+    <el-tag size="mini">{{plan.plan.manager.name}}</el-tag>
     </el-descriptions-item>
 
 </el-descriptions>
@@ -24,6 +21,18 @@
 <el-descriptions>
 <el-descriptions-item label="计划时间">{{plan.plan.startDate+" "+
     plan.plan.startTime+" 至 "+plan.plan.endDate+" "+plan.plan.endTime}}
+</el-descriptions-item>
+</el-descriptions>
+
+<el-descriptions :column="1" v-if="plan.plan.type=='小组计划'">
+<el-descriptions-item label="小组成员">
+      <div v-if="plan.plan.type=='小组计划'&&plan.plan.member.length>0">
+      <el-tag style="margin-right:5px" size="mini" :type="item.host?'':'success'" v-for="(item,i) in plan.plan.member" :key="i">{{item.name}}</el-tag>
+      </div>
+
+      <div v-if="plan.plan.type=='小组计划'&&plan.plan.member.length==0">
+      <span>无</span>
+      </div>      
 </el-descriptions-item>
 </el-descriptions>
 
@@ -42,7 +51,25 @@
     </div>
     
     <div>任务描述：{{item.pro_text}}</div>
-    <div>任务状态：{{item.status==0?'未开始':(item.status==1?'进行中':'已完成')}}</div>
+
+    <div v-if="plan.plan.type=='小组计划'">
+    任务参与人：
+
+    <el-tag size="mini" type="info" v-if="!item.hasOwnProperty('proMem')||item.proMem.length==0">
+    未指定
+    </el-tag>
+
+    <el-tag style="margin-right:5px" size="mini" :type="mem.host?'':'success'" v-for="(mem,i) in item.proMem" :key="i">
+    {{mem.name}}
+    </el-tag>
+    </div>
+
+    <div>任务状态：
+    <el-tag v-if="item.status==0" type="danger" size="mini">未开始</el-tag>
+    <el-tag v-if="item.status==1" type="warning" size="mini">进行中</el-tag>
+    <el-tag v-if="item.status==2" type="success" size="mini">已完成</el-tag>
+    </div>
+
   </el-collapse-item>
 </el-collapse>
 
@@ -105,7 +132,7 @@
 
     </el-card>
     </div>
-  </div>
+    </div>
     </el-card>
 
 
@@ -120,9 +147,19 @@
     <el-timeline-item :timestamp="dateFormat(item.date)" placement="top" v-for="(item,i) in timeLine" :key="i">
       <el-card>
 
-       <div v-for="(e,j) in item.event" :key="j">
-          <span>{{e.time+"："+e.str}}</span>
-       </div>
+       <el-table
+       :show-header="false"
+       :data="item.event"
+        style="width: 100%">
+       <el-table-column  prop="time"></el-table-column>
+       <el-table-column  prop="str"></el-table-column>
+       <el-table-column >
+       <template slot-scope="scope">
+       <el-tag v-if="scope.row.status=='开始'" type="success" size="medium">开始</el-tag>
+       <el-tag v-if="scope.row.status=='结束'"  type="warning" size="medium">结束</el-tag>
+       </template>
+       </el-table-column>
+       </el-table>
 
       </el-card>
     </el-timeline-item>
@@ -224,7 +261,7 @@ var db=[]
       db=new database({
         filename:that.$store.state.dbName,
         autoload:true
-        })
+      })
 
       db.find({type:"planItemNotes",plan:that.plan.plan.name},function(err,Docs){
                    if(Docs.length!=0){
@@ -235,18 +272,6 @@ var db=[]
                    }
                 })
 
-        if(this.plan.plan.type=='小组计划'&&this.plan.plan.member.length>0){
-            this.plan.memberStr=''
-            let that=this
-            this.plan.plan.member.forEach(function(item,i){
-                if(i<that.plan.plan.member.length-1){
-                    that.plan.memberStr+=(item+'、')
-                }else{
-                    that.plan.memberStr+=item
-                }
-            })
-        }
-
 
         //getTimeLine schedule
         this.plan.process.forEach(function(item,i){
@@ -254,31 +279,35 @@ var db=[]
                 that.timeLineMap.set(item.startDate,[])
             }
 
-             if(i!=0&&i!=that.plan.process.length-1&&!that.timeLineMap.has(item.endDate)){
+            if(i!=0&&i!=that.plan.process.length-1&&!that.timeLineMap.has(item.endDate)){
                 that.timeLineMap.set(item.endDate,[])
             }
 
-            if(i==0){
-                that.timeLineMap.get(item.startDate).push({
-                time:item.startTime,
-                str:'计划开始'
-            })
-            }else if(i==that.plan.process.length-1){
-                that.timeLineMap.get(item.startDate).push({
-                time:item.startTime,
-                str:'计划结束'
-            })
-            }else{
-                 that.timeLineMap.get(item.startDate).push({
-                     time:item.startTime,
-                     str:'任务'+i+"："+item.pro_name+"  开始"
-                 })
-                 that.timeLineMap.get(item.endDate).push({
-                     time:item.endTime,
-                     str:'任务'+i+"："+item.pro_name+"  结束"
-                 })
-            }
-        })
+                        if(i==0){
+                              that.timeLineMap.get(item.startDate).push({
+                                  time:item.startTime,
+                                  str:'计划',
+                                  status:'开始'
+                                })
+                        }else if(i==that.plan.process.length-1){
+                            that.timeLineMap.get(item.startDate).push({
+                                time:item.startTime,
+                                str:'计划',
+                                status:'结束'
+                                })
+                            }else{
+                                that.timeLineMap.get(item.startDate).push({
+                                    time:item.startTime,
+                                    str:'任务'+i+"："+item.pro_name,
+                                    status:'开始'
+                                    })
+                                    that.timeLineMap.get(item.endDate).push({
+                                        time:item.endTime,
+                                        str:'任务'+i+"："+item.pro_name,
+                                        status:'结束'         
+                                        })
+                                    }
+                                })
 
             this.timeLineMap.forEach(function(value,key){
                       value.sort((a,b)=>{return that.compareTime(a.time,b.time)})
@@ -320,7 +349,7 @@ var db=[]
 
 
         activeName: '1',
-        plan:[],
+        plan:null,
         logDate:'',
         notes:{},
         planLog:'',

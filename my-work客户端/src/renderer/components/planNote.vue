@@ -75,7 +75,13 @@ export default {
     },
     methods:{
         goBack(){
-            this.$router.push('/workbench')
+             let that=this
+             this.$router.push({
+            name:'workbenchPlan',
+            params:{
+              name:that.plan_name
+            }
+          })
         },
 
         //新增计划总结

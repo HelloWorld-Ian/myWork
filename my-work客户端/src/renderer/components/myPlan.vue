@@ -2,8 +2,14 @@
     <div class="main">
      <img v-if="empty" src="../assets/empty.svg" style="height:90%;width:90%" />
     <div style="height:100%" v-if="plan.length!=0">
-    <div style="height:19%"  v-for="(item,i) in plan" :key="i">
-    
+
+    <el-card style="width:99%;margin:auto"> 
+     <span style="font-weight:bold;font-size:20px;color:rgb(87, 171, 226)"  >
+     我的计划
+     </span>
+    </el-card>
+
+    <div style="height:110px"  v-for="(item,i) in plan" :key="i">
     <el-card class="planDisplay" @click.native="PlanDisplay(item)" shadow='hover'>
     
     <div class="planBasic">
@@ -13,11 +19,11 @@
     width="200"
     trigger="hover"
     :content="item.plan.name"
-    v-if="item.plan.name.length>4">
-    <span slot="reference" style="font-size:20px;color: rgb(87, 171, 226)"  >{{item.plan.name.length>4?item.plan.name.substr(0,4)+'...':item.plan.name}}</span>
+    v-if="item.plan.name.length>7">
+    <span slot="reference" style="font-size:20px;color: rgb(87, 171, 226)"  >{{item.plan.name.length>7?item.plan.name.substr(0,7)+'...':item.plan.name}}</span>
     </el-popover>
 
-     <span v-if="item.plan.name.length<=4" style="font-size:20px;color: rgb(87, 171, 226)"  >{{item.plan.name}}</span>
+     <span v-if="item.plan.name.length<=7" style="font-size:20px;color: rgb(87, 171, 226)"  >{{item.plan.name}}</span>
     
     <span style="font-size:15px;width:100%;float:left"  >{{item.plan.type}}</span>
     <img  style="width:30px;height:30px;float:left;margin-top:5%" src="../assets/myPlanItem.svg" />
@@ -25,8 +31,8 @@
     
     <div class="planExcutor">
 
-    <span style="font-size:15px; color: rgb(105, 192, 148)"  >发起人:</span>
-    <span style="font-size:15px"  >{{item.plan.type=='个人计划'?item.plan.excutor:item.plan.manager}}</span>
+    <span style="font-size:15px; color: rgb(105, 192, 148)"  >{{item.plan.type=='个人计划'?'执行人:':'负责人:'}}</span>
+    <span style="font-size:15px"  >{{item.plan.manager.name}}</span>
     <br>
     <span style="font-size:15px; color: rgb(105, 192, 148)">计划时间:</span>
     <span style="font-size:15px"  >{{item.plan.startDate+" "+
@@ -60,7 +66,7 @@ export default {
       db=new database({
         filename:that.$store.state.dbName,
         autoload:true
-        })
+      })
         db.find({type:"planItemTest2"},function(err,Docs){
                    if(Docs.length!=0){
                      that.plan=JSON.parse(JSON.stringify(Docs))
@@ -86,7 +92,7 @@ export default {
                    finished++
                }
            }
-           return finished/total*100
+           return parseInt(finished/total*100)
        },
        planStatus(pro){
            let total=pro.length-2
@@ -149,14 +155,14 @@ export default {
     height: 100%;
     padding-top: 3px;
     box-sizing: border-box;
+    font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB",
+    "Microsoft YaHei","微软雅黑",Arial,sans-serif;
 }
 
 .planDisplay{
     width: 99%;
     height: 100%;
     margin: auto;
-    font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB",
-    "Microsoft YaHei","微软雅黑",Arial,sans-serif;
 }
 
 .planDisplay >>> .el-card__body{
@@ -169,17 +175,20 @@ export default {
 }
 
 .planBasic{
-    width: 15%;
+    width: 17%;
     float: left;
 }
 
 .planExcutor{
-    width: 52%;
+    width: 60%;
     margin-top: 2%;
     margin-left: 7%;
     float: left;
 }
 
-
+.searchArea{
+    width: 99%;
+    margin: auto;
+}
 
 </style>

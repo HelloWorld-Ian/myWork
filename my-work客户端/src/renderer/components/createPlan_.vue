@@ -2,10 +2,10 @@
 <div class="main">
 <el-card style="height:100%;overflow-y:auto">
 <el-card class="plan-card" >
-<h3 style="color:#1E90FF">计划信息</h3>
+<h3 style="color:#1E90FF">创建计划</h3>
   <el-form ref="form" :model="form" label-width="auto">
   <el-form-item class="span"  label="计划名称">
-    <el-input v-model="form.name" :readonly="true"></el-input>
+    <el-input v-model="form.name"></el-input>
   </el-form-item>
   <el-form-item class="span" label="计划时间">
     <el-col :span="11">
@@ -29,12 +29,12 @@
   </el-form-item>
   
   <el-form-item  label="计划执行人" v-if="form.type=='个人计划'">
-    <el-tag @click.native="editMem(form.manager)" size="medium" class="pointer" style="font-size:15px;margin-right:5px">{{form.manager.name}}</el-tag>
+    <el-tag @click.native="editMem(host)" size="medium" class="pointer" style="font-size:15px;margin-right:5px">{{host.name}}</el-tag>
   </el-form-item>
   
   <el-form-item  label="小组负责人" v-if="form.type=='小组计划'">
   
-   <el-tag @click.native="editMem(form.manager)" size="medium" class="pointer" style="font-size:15px;margin-right:5px">{{form.manager.name}}</el-tag>
+   <el-tag @click.native="editMem(host)" size="medium" class="pointer" style="font-size:15px;margin-right:5px">{{host.name}}</el-tag>
 
   </el-form-item>
 
@@ -58,15 +58,15 @@
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
   <el-form-item>
-    <el-button type="success" @click="createPlan">修改任务</el-button>
+    <el-button type="success" @click="createPlan">立即创建</el-button>
     <el-button type="warning" @click="openPro">子任务</el-button>
-    <el-button type="info" @click="goBack">返回</el-button>
+    <el-button type="info" @click="refresh">重置</el-button>
   </el-form-item>
-</el-form>
-</el-card>
+  </el-form>
+  </el-card>
 
-<!-- 指定计划参与人 -->
-<el-dialog title="添加参与人" v-if="addMemberTemp!=null"  :visible.sync="addMemberVisible"
+  <!-- 指定计划参与人 -->
+  <el-dialog title="添加参与人" v-if="addMemberTemp!=null"  :visible.sync="addMemberVisible"
            :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
   <el-form label-width="auto">
     <el-form-item label="名字" >
@@ -83,8 +83,8 @@
     <el-button @click="cancleAddMem">取 消</el-button>
     <el-button type="primary" @click="confirmAddMem">确 定</el-button>
   </div>
-</el-dialog>
-</el-card>
+  </el-dialog>
+  </el-card>
 
 
 <!-- 修改参与人信息 -->
@@ -155,11 +155,12 @@
   </el-form-item>
 
 
-  <el-form-item label="任务参与人">
+  <el-form-item label="任务参与人" v-if="form.type=='小组计划'">
 
   <el-tag class="hover" size="mini" 
           :type="item.host?'':'success'" 
           v-for="(item,i) in proTmp.proMem"
+          :key="i"
           style="font-size:15px;margin-right:5px">{{item.name}}</el-tag>
 
   <el-tag @click.native="addProMem" class="hover" size="mini" type="warning">+添加</el-tag>
@@ -205,7 +206,7 @@
   </el-form-item>
 
 
-  <el-form-item label="任务参与人">
+  <el-form-item label="任务参与人" v-if="form.type=='小组计划'">
 
   <el-tag class="hover" size="mini" 
           :type="item.host?'':'success'" 
@@ -256,10 +257,8 @@ export default {
         filename:that.$store.state.dbName,
         autoload:true
         })
-      this.form=JSON.parse(JSON.stringify(this.$route.params.plan))
-      this.process=JSON.parse(JSON.stringify(this.$route.params.process))
-      this.process.shift()
-      this.process.pop()
+      this.form.member.push(this.host)
+
 },
   data () {
     return {
@@ -280,7 +279,14 @@ export default {
       
       addMemberVisible:false,
       addMemberTemp:null,
-     
+      host:{
+        name:this.$store.state.user=='HelloWorld'?'本地用户':this.$store.state.user_name,
+        email:this.$store.state.user=='HelloWorld'?'':this.$store.state.user,
+        phone:this.$store.state.phone,
+        host:true,
+        id:0,
+        user_id:this.$store.state.user_id
+      },
       memberSlected:null,
       memberSlectedVisible:false,
 
@@ -304,15 +310,6 @@ export default {
     }
   },
   methods: {
-    goBack(){
-      let that=this
-      this.$router.push({
-        name:'workbenchPlan',
-        params:{
-          name:that.form.name
-        }
-      })
-    },
     //比价日期前后
     compareDate(date1,date2){
             let arr1=date1.split(/\s*[^0-9]\s*/g)
@@ -448,9 +445,9 @@ export default {
       that.form.name=that.form.name.replace(/^\s*|\s*$/g,"")
 
       db.find({type:"planItemTest2",'plan.name':that.form.name},function(err,Docs){
-        if(Docs.length==0){
+        if(Docs.length!=0){
            that.$message({
-             message:'原计划不存在或已被删除！',
+             message:'不能存在同名计划',
              offset:100,
              type:'error',
              showClose: true
@@ -515,7 +512,8 @@ export default {
       })
       
 
-      if(that.form.manager.name.match(/^\s*$/g)){
+      that.form.manager=that.host
+      if(that.host.name.match(/^\s*$/g)){
            that.$message({
             message:'小组成员名字不能为空',
             type:'error'
@@ -538,16 +536,11 @@ export default {
 
      
      if(!that.$store.state.login){
-       db.update({
-         type:"planItemTest2",
-         "plan.name":that.form.name
-         },
-       {
+       db.insert({
          type:"planItemTest2",
          plan:that.form,
          process:that.process,
-        },
-        function (err, newDoc){
+        },function (err, newDoc){
           that.$message({
             message:'创建成功',
             type:'success'
@@ -605,6 +598,11 @@ export default {
             that.$message({
               message:'云端同步失败，请检查网络设置',
               type:'error'
+            })
+          }else{
+            that.$message({
+              message:'创建成功',
+              type:'success'
             })
           }
           that.$store.state.syncing=false
