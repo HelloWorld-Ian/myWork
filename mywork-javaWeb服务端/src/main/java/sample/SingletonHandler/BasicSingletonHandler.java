@@ -3,6 +3,7 @@ package sample.SingletonHandler;
 import Core.annotation.Singleton;
 import Core.annotation.SingletonObjHandler;
 import com.alibaba.druid.pool.DruidDataSource;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +13,7 @@ import java.util.Properties;
 public class BasicSingletonHandler {
 
     @Singleton
-    public DruidDataSource getString(){
+    public DruidDataSource getDB(){
         DruidDataSource d=new DruidDataSource();
         InputStream i=this.getClass().getClassLoader().getResourceAsStream("user.properties");
         Properties p=new Properties();
@@ -22,11 +23,15 @@ public class BasicSingletonHandler {
             d.setUsername((String)p.get("username"));
             d.setPassword((String)p.get("password"));
             d.setDriverClassName((String)p.get("driverClass"));
-            d.setMaxActive(10);
+            d.setMaxActive(100);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return d;
     }
 
+//    @Singleton
+//    public Jedis jedis(){
+//        return new Jedis("127.0.0.1",6379);
+//    }
 }

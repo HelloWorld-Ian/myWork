@@ -1,11 +1,14 @@
 package Core.handlers;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
+import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Map;
 import java.util.Objects;
@@ -39,28 +42,29 @@ public class StaticHandler extends SimpleChannelHandler<FullHttpRequest> {
     }
 
     private void handleResource(ChannelHandlerContext ctx, FullHttpRequest req, String path){
-        String url = Objects.requireNonNull(this.getClass().getResource("/")).getPath() + path;
-        File file = new File(url);
-        if(!file.exists()||file.isDirectory()){
-//            handleFileNotFound(ctx);
+        InputStream in=this.getClass().getResourceAsStream("/"+path);
+        if(in==null){
             return;
         }
-        handleFile(ctx, req, file);
+        handleFile(ctx, req, path.substring(path.indexOf(".")),in);
     }
 
     /**
      * find the static file
      */
-    public void handleFile(ChannelHandlerContext ctx, FullHttpRequest req, File file){
+    public void handleFile(ChannelHandlerContext ctx, FullHttpRequest req, String suffix,InputStream in){
         RandomAccessFile f;
         try {
-            f=new RandomAccessFile(file,"r");
-            HttpHeaders headers=handleHeader(file);
-            HttpResponse response = new DefaultHttpResponse
-                    (req.protocolVersion(), HttpResponseStatus.OK);
+
+            HttpHeaders headers=handleHeader(suffix);
+            byte[]bts=in.readAllBytes();
+
+            //netty 以 byteBuf 的形式返回响应体
+            FullHttpResponse response = new DefaultFullHttpResponse
+                    (HttpVersion.HTTP_1_1, HttpResponseStatus.OK, Unpooled.wrappedBuffer(bts));
             response.headers().set(headers);
-            ctx.write(response);
-            ctx.write(new DefaultFileRegion(f.getChannel(),0,f.length()));
+
+            ctx.writeAndFlush(response);
 
             //ChanelFuture: 用于保存I/O异步操作的结果
             ChannelFuture future = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -82,10 +86,8 @@ public class StaticHandler extends SimpleChannelHandler<FullHttpRequest> {
      *
      * @return the header that matches the type of the file
      */
-    public HttpHeaders handleHeader(File file){
+    public HttpHeaders handleHeader(String suffix){
         HttpHeaders header=new DefaultHttpHeaders();
-        String fileName=file.getName();
-        String suffix=fileName.substring(fileName.indexOf("."));
         header.set(HttpHeaderNames.CONTENT_TYPE,typeToHeaders.get(suffix));
         return header;
     }

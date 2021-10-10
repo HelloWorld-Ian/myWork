@@ -6,6 +6,7 @@ import sample.Beans.plan;
 import sample.Dao.planDao;
 import sample.Utils.SqlUtil;
 
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -32,6 +33,39 @@ public class planDaoImpl implements planDao {
 
 
         return SqlUtil.select(c,sql,plan.class,user_id);
+    }
+
+    @Override
+    public int getPlanId(plan p) {
+        Connection c=null;
+
+        try {
+            c=d.getConnection();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        if(c==null){
+            return -1;
+        }
+        String sql="select id from plan where user_id=? and plan_name=?";
+        List<Object>plan=SqlUtil.select(c,sql,plan.class,p.getUser_id(),p.getPlan_name());
+        plan res=(plan)plan.get(0);
+        return res.getId();
+    }
+
+    @Override
+    public boolean updatePlan(plan p) {
+        Connection c=null;
+        try {
+            c=d.getConnection();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        if(c==null){
+            return false;
+        }
+        String sql="update plan set plan_text=? where id=?";
+        return SqlUtil.executeUpdate(c,sql,p.getPlan_text(),p.getId())!=-1;
     }
 
     @Override

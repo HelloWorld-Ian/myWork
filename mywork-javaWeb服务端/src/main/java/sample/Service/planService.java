@@ -26,6 +26,10 @@ public class planService {
         return JSON.toJSONString(list);
     }
 
+    public int getPlanId(plan p){
+        return planDao.getPlanId(p);
+    }
+
     /**
      *
      * @param user_id identify the user
@@ -36,5 +40,8 @@ public class planService {
         return planDao.deletePlan(user_id,plan_name);
     }
 
+    public boolean updatePlanById(plan p){
+        return planDao.updatePlan(p);
+    }
 
 }

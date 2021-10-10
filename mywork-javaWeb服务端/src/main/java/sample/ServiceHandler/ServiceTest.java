@@ -5,15 +5,25 @@ import Core.annotation.Inject;
 import Core.annotation.ServiceHandlerMapping;
 import Core.handlers.HttpRequestHandler;
 import Core.handlers.HttpResponseHandler;
+import Core.net.NettyGroup;
 import Core.template.ServiceHandler;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import sample.Beans.plan;
-import sample.Beans.user;
-import sample.Service.EmailService;
-import sample.Service.UserService;
-import sample.Service.planService;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelId;
+import org.jsoup.*;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import sample.Beans.*;
+import sample.Service.*;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @ServiceHandlerMapping("")
@@ -28,9 +38,120 @@ public class ServiceTest extends ServiceHandler {
     @Inject
     EmailService emailService;
 
+    @Inject
+    goalService goalService;
+
+    @Inject
+    noticeService noticeService;
+
+    @Inject
+    coworkService coworkService;
+
+    @Inject
+    redisService redisService;
+
+
+    @ServiceHandlerMapping("/uploadCowork")
+    public void uploadCowork(HttpResponseHandler res,cowork c){
+        if(coworkService.addCowork(c)){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
+
+    @ServiceHandlerMapping("/downloadCowork")
+    public void downloadCowork(HttpResponseHandler res,HttpRequestHandler req){
+        int partner=Integer.parseInt((String) req.getParameter("partner"));
+        res.write(coworkService.getCowork(partner));
+    }
+
+
+
+    @ServiceHandlerMapping("/deleteCowork")
+    public void deleteCowork(HttpResponseHandler res,HttpRequestHandler req){
+        int id=Integer.parseInt((String) req.getParameter("id"));
+        if(coworkService.deleteCowork(id)){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
+
+    @ServiceHandlerMapping("/uploadNotice")
+    public void uploadNotice(HttpResponseHandler res,notice n){
+        if(noticeService.addNotice(n)){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
+
+    @ServiceHandlerMapping("/downloadNotice")
+    public void downloadNotice(HttpResponseHandler res,HttpRequestHandler req){
+        int user_id=Integer.parseInt((String) req.getParameter("user_id"));
+        res.write(noticeService.getNotice(user_id));
+    }
+
+    @ServiceHandlerMapping("/deleteNotice")
+    public void deleteNotice(HttpResponseHandler res,HttpRequestHandler req){
+        int id=Integer.parseInt((String) req.getParameter("id"));
+        if(noticeService.deleteNotice(id)){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
+
+    @ServiceHandlerMapping("/updateNotice")
+    public void updateNotice(HttpResponseHandler res,notice n){
+        if(noticeService.updateNoticeContent(n)){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
+
+    @ServiceHandlerMapping("/updateNoticeRead")
+    public void updateNoticeRead(HttpResponseHandler res,notice n){
+        if(noticeService.updateNoticeRead(n)){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
+
+
+    @ServiceHandlerMapping("/uploadGoal")
+    public void uploadGoal(HttpResponseHandler res, goal g){
+        if(goalService.insert(g)){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
+
+    @ServiceHandlerMapping("/downloadGoal")
+    public void downloadGoal(HttpResponseHandler res,HttpRequestHandler req){
+        int user_id=Integer.parseInt((String)req.getParameter("user_id"));
+        res.write(goalService.getGoal(user_id));
+    }
+
+    @ServiceHandlerMapping("/deleteGoal")
+    public void deleteGoal(HttpResponseHandler res, goal g){
+        if(goalService.deleteGoal(g.getUser_id(),g.getGoal_name())){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
 
     @ServiceHandlerMapping("/register")
     public void register(HttpResponseHandler res,HttpRequestHandler req,user u){
+        if(!userService.isUnique(u)){
+            res.write("exists");
+            return;
+        }
         if(userService.addUser(u)){
             res.write("success");
         }else{
@@ -40,12 +161,22 @@ public class ServiceTest extends ServiceHandler {
 
 
     @ServiceHandlerMapping("/login")
-    public void login(HttpResponseHandler res, user u){
-        int user_id= userService.checkUser(u);
-        if(user_id!=0){
-            res.write(Integer.toString(user_id));
+    public void login(HttpResponseHandler res,HttpRequestHandler req, user u){
+        user user= userService.checkUser(u);
+        if(user!=null){
+            res.write(JSON.toJSONString(user));
         }else{
             res.write("fail");
+        }
+    }
+
+    @ServiceHandlerMapping("/getUserId")
+    public void getUserId(HttpResponseHandler res,HttpRequestHandler req, user u){
+        user user= userService.getUser(u.getEmail());
+        if(user!=null){
+            res.write(JSON.toJSONString(user));
+        }else{
+            res.write("-1");
         }
     }
 
@@ -114,10 +245,37 @@ public class ServiceTest extends ServiceHandler {
         res.write(jsonStr);
     }
 
+    @ServiceHandlerMapping("/updatePlan")
+    public void updatePlan(HttpResponseHandler res,plan p){
+        if(planService.updatePlanById(p)){
+            res.write("success");
+        }else{
+            res.write("fail");
+        }
+    }
+
+
+    @ServiceHandlerMapping("/getPlanId")
+    public void getPlanId(HttpResponseHandler res,plan p){
+        int id= planService.getPlanId(p);
+        res.write(Integer.toString(id));
+    }
+
+
     @ServiceHandlerMapping("/emailSync")
     public void doEmailSync(HttpRequestHandler req,HttpResponseHandler res){
         int user_id=Integer.parseInt((String)req.getParameter("user_id"));
+        String acceptor_name=(String)req.getParameter("user_name");
         user user= userService.getUserEmail(user_id);
+        InputStream in=this.getClass().getResourceAsStream("/static/page/email.html");
+        String content= null;
+        try {
+            assert in != null;
+            content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+//            System.out.println(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         if(user==null){
             res.write("fail");
         }
@@ -128,19 +286,52 @@ public class ServiceTest extends ServiceHandler {
         JSONArray arr=JSON.parseArray(schedule);
         for (Object o : arr) {
             JSONObject j = (JSONObject) o;
-
+            assert content != null;
             String start=(String)j.get("start");
             String startContent=(String)j.get("startContent");
             String end=(String) j.get("end");
             String endContent=(String) j.get("endContent");
+                if(start!=null&&startContent!=null){
 
-            if(start!=null&&startContent!=null){
-                emailService.addJob(start,startContent,email);
-            }
-            if(end!=null&&endContent!=null){
-                emailService.addJob(end,endContent,email);
-            }
+                    Document html= Jsoup.parse(content);
+                    Element acceptor=html.getElementById("acceptor");
+                    acceptor.append(acceptor_name+",");
+                    Element body=html.getElementById("bodyContent");
+                    body.append(startContent);
+                    emailService.addJob(start,html.toString(),email);
+                }
+                if(end!=null&&endContent!=null){
+                    Document html= Jsoup.parse(content);
+                    Element acceptor=html.getElementById("acceptor");
+                    acceptor.append(acceptor_name+",");
+                    Element body=html.getElementById("bodyContent");
+                    body.append(endContent);
+                    emailService.addJob(end,html.toString(),email);
+                }
         }
         res.write("success");
+    }
+
+
+    @ServiceHandlerMapping("/chkOnline")
+    public void chkOnline(HttpRequestHandler req,HttpResponseHandler res){
+        String userArr=(String) req.getParameter("userArr");
+        List<Integer>users=JSON.parseArray(userArr,Integer.class);
+        Map<String,Integer> status=new HashMap<>();
+        for (Integer user_id:users){
+            if(NettyGroup.user.containsKey(user_id)){
+                ChannelId cid=NettyGroup.user.get(user_id);
+                Channel c=NettyGroup.group.find(cid);
+                if(c!=null&&c.isActive()){
+                    status.put(Integer.toString(user_id),1);
+                }else{
+                    status.put(Integer.toString(user_id),0);
+                    NettyGroup.user.remove(user_id);
+                }
+            }else{
+                status.put(Integer.toString(user_id),0);
+            }
+        }
+        res.write(JSON.toJSONString(status));
     }
 }

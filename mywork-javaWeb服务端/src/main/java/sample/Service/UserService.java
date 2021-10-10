@@ -12,12 +12,17 @@ public class UserService {
         return userDao.insertUser(u);
     }
 
-    public int checkUser(user u){
-        user checkU=userDao.getUser(u.getEmail(),u.getPassword());
-        if(checkU==null){
-            return 0;
-        }
-        return checkU.getId();
+    public boolean isUnique(user u){
+        user check=userDao.getUser(u.getEmail());
+        return check==null;
+    }
+
+    public user getUser(String email){
+        return userDao.getUser(email);
+    }
+
+    public user checkUser(user u){
+        return userDao.getUser(u.getEmail(),u.getPassword());
     }
 
     public boolean updateUser(user u){

@@ -36,7 +36,7 @@ public class userDaoImpl implements userDao {
 
     @Override
     public boolean updateUser(user u) {
-        String sql="insert into user values(?,?,?) on duplicate key update email=values(email),password=values(password)";
+        String sql="update user set email=?,password=?,phone=?,user_name=? where id=?";
         Connection c=null;
         try {
             c=d.getConnection();
@@ -46,7 +46,9 @@ public class userDaoImpl implements userDao {
         if(c==null){
             return false;
         }
-        return SqlUtil.executeUpdate(c,sql,u.getId(),u.getEmail(),u.getPassword())!=-1;
+        return SqlUtil.executeUpdate(c,sql,u.getEmail(),
+                u.getPassword(),u.getPhone(),u.getUser_name(),
+                u.getId())!=-1;
     }
 
     @Override
@@ -69,10 +71,30 @@ public class userDaoImpl implements userDao {
         }
         return (user)users.get(0);
     }
+    @Override
+    public user getUser(String email) {
+        String sql="select * from user where email=?";
+        Connection c=null;
+        try {
+            c=d.getConnection();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+
+        if(c==null){
+            return null;
+        }
+
+        List<Object>users=SqlUtil.select(c,sql,user.class,email);
+        if(users.size()==0){
+            return null;
+        }
+        return (user)users.get(0);
+    }
 
     @Override
     public boolean insertUser(user u) {
-        String sql="insert into user values(null,?,?)";
+        String sql="insert into user values(null,?,?,?,?)";
         Connection c=null;
         try {
             c=d.getConnection();
@@ -83,7 +105,9 @@ public class userDaoImpl implements userDao {
             return false;
         }
 
-        boolean res=SqlUtil.executeUpdate(c,sql,u.getEmail(),u.getPassword())!=-1;
+        boolean res=SqlUtil.executeUpdate(c,sql,u.getEmail(),
+                u.getPassword(),u.getPhone(),
+                u.getUser_name())!=-1;
 
         try {
             c.close();

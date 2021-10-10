@@ -4,9 +4,7 @@ import Core.annotation.Singleton;
 import Core.annotation.SingletonObjHandler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
-import sample.Service.EmailService;
-import sample.Service.UserService;
-import sample.Service.planService;
+import sample.Service.*;
 
 import java.text.SimpleDateFormat;
 
@@ -35,4 +33,24 @@ public class ServiceSingletonHandler {
         e.start();
         return e;
     }
+
+    @Singleton
+    public goalService getGoalService(){
+        return new goalService();
+    }
+
+    @Singleton
+    public noticeService getNoticeService(){
+        return new noticeService();
+    }
+
+    @Singleton
+    public coworkService getCoworkService(){
+        return new coworkService();
+    }
+
+//    @Singleton
+//    public redisService getRedisService(){
+//        return new redisService();
+//    }
 }

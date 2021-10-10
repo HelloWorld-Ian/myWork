@@ -9,7 +9,7 @@ import java.util.Properties;
 
 public class emailUtils {
     private static final String email="planNote@163.com";
-    private static final String password="GDIXIQCJNQBMORAX";
+    private static final String password="IBXZQKIMMKDNVLUU";
     private static final String mail_transport_protocol="smtp";
     private static final String mail_smtp_host="smtp.163.com";
     private static final String mail_smtp_auth="true";
@@ -32,7 +32,7 @@ public class emailUtils {
         try {
             msg.setFrom(new InternetAddress(email));
             msg.setRecipients(Message.RecipientType.TO,recipient);
-            msg.setSubject("planNote","utf-8");
+            msg.setSubject("MyWork:计划进度提醒","utf-8");
             msg.setContent(content,"text/html;charset=utf-8");
             msg.setSentDate(new Date());
         } catch (MessagingException e) {
@@ -47,6 +47,7 @@ public class emailUtils {
             Transport trans=session.getTransport();
             trans.connect(email,password);
             trans.sendMessage(msg,msg.getAllRecipients());
+
             trans.close();
         } catch (MessagingException e) {
             e.printStackTrace();
